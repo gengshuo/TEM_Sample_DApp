@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sample DApp - Taipei Ethereum Meetup - 區塊鏈基礎教育課程</title>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Hi!</h1>
+        <blockquote>
+            This is a simple web dapp.
+            First, we want to connect your MeataMask.
+        </blockquote>
+        <a class="waves-effect waves-light btn" loading-text="Connecting..." 
+            id="btn-connect-metamask">Connect MetaMask</a>
+    </div>
+
+    <!--JavaScript at end of body for optimized loading-->
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <!--<script type="text/javascript" src="js/web3.min.js"></script>-->
+    <script>
+        sampleDapp = {
+            init: function(){
+                document.getElementById("btn-connect-metamask")
+                    .addEventListener("click", this.handleConnectMeataMask_Click);
+
+                console.log(web3.version);  
+                web3.version.getNode(function(error, result){ console.log("getNode", result) })
+                web3.version.getNetwork(function(error, result){ console.log("getNetwork", result) })
+                web3.version.getEthereum(function(error, result){ console.log("getEthereum", result) })
+                web3.version.getWhisper(function(error, result){ console.log("getWhisper", result) })
+                console.log(window.ethereum);    
+            },
+            openButtonLoading: function(elm) {
+                elm.classList.add("disabled");
+                elm.setAttribute("origin-text", elm.innerText);
+                elm.innerText = elm.getAttribute("loading-text");
+            },
+            closeButtonLoading: function(elm) {
+                elm.classList.remove("disabled");
+                elm.setAttribute("loading-text", elm.innerText);
+                elm.innerText = elm.getAttribute("origin-text");
+            },
+            handleConnectMeataMask_Click: function(e) {
+                sampleDapp.openButtonLoading(e.target);
+                setTimeout(function(){
+                    sampleDapp.closeButtonLoading(e.target);
+                }, 2000)
+            },
+        }
+
+        sampleDapp.init();
+        
+    </script>
+</body>
+</html>
