@@ -18,13 +18,14 @@
         <h1>Hello DApp!</h1>
         <blockquote id="info-block">
             <p>This is a simple web dapp.</p>
+            <p>Supported Ethereum Network: <b>(3) Ropsten</b></p>
             <p id="network-info">You are now at Ethereum Network: <b id="network_name">Checking...</b></p>
             <p>Here is the Contract Information: </p>
             <p>Contract Address at: <b class="blue-text text-darken-4" id="contract-at">Loading...</b></p>
             <p>
                 String Variable of the Contract : <b class="blue-text" id="contract-data">Loading...</b>
-                <a class="waves-effect waves-light btn" loading-text="Reloading..." 
-                    id="btn-var-get">Reload</a>
+                <a class="waves-effect waves-light btn-small" loading-text="Reloading..." 
+                    id="btn-var-reload">Reload</a>
             </p>
             <p id="error-info" class="red-text text-darken-3" style="display: none;"></p>
         </blockquote>
@@ -37,7 +38,7 @@
                 <p id="tx-info">Latest Tx: <b id="latest-tx">N/A</b></p>
                 <p>
                     <input type="text" id="input-var" placeholder="Please enter something you'd like to set..." />
-                    <a class="waves-effect waves-light btn" loading-text="Waiting for Signing..." 
+                    <a class="waves-effect waves-light btn-small" loading-text="Waiting for Signing..." 
                         id="btn-set-contract-var">Set</a>
                 </p>
             </section>
@@ -45,8 +46,11 @@
             <section id="sec-connect">
                 <p>You can set a value to the String Variable of the Contract.</p>
                 <p>First, click `Connect MeataMask` to get your account information.</p>
-                <a class="waves-effect waves-light btn" loading-text="Connecting..." 
-                    id="btn-connect-metamask">Connect MetaMask</a>
+                <a class="waves-effect waves-light blue-grey darken-4 btn-small pulse" loading-text="Connecting..." 
+                    id="btn-connect-metamask">
+                    <img src="images/metamask.svg" style="width: 20px; position: relative; top: 5px;" /> 
+                    Connect MetaMask
+                </a>
             </section>
             
         </blockquote>
@@ -63,7 +67,7 @@
             networkId: 0,
             simpleContractAddrs: { // NetworkID => ContractAddress
                 "3": "0xc73e8c4da42587d38d00259dc7e5195df6604c61",
-                "5777": "0x765df6fded9ba6ba377fb6332e7a61337acea41e"
+                "5777": "0x3e3e830dc1c2eb41bfd2e660116b3a1d07aca4a3"
             },
             simpleContractABI: [
                 {
@@ -101,7 +105,7 @@
                     .addEventListener("click", this.handleConnectMeataMask_Click); 
                 document.getElementById("btn-set-contract-var")
                     .addEventListener("click", this.handleSetContractVar_Click);
-                document.getElementById("btn-var-get")
+                document.getElementById("btn-var-reload")
                     .addEventListener("click", function(e){
                         sampleDapp.openButtonLoading(e.target);
                         sampleDapp.getContractVar(function(){
@@ -233,8 +237,11 @@
                     if(!error) {
                         document.getElementById("contract-data").innerText = JSON.stringify(result);
                         if(typeof callback === "function") callback();
-                    } else
+                    } else {
+                        sampleDapp.handleContractLoadingErr();
                         console.error(error);
+                    }
+                        
                 });
             },
             setContract: function() {
@@ -254,6 +261,10 @@
                 document.getElementById("setting-block").style.display = "none";
                 this.showErr("We haven't supported this Ethereum Network.");
             },
+            handleContractLoadingErr: function(){
+                sampleDapp.showErr("Contract address seems wrong!! Can't not found the current contract.")
+                document.getElementById("setting-block").style.display = "none";
+            },
             handleConnectMeataMask_Click: function(e) {
                 sampleDapp.openButtonLoading(e.target);
                 window.ethereum.enable().then(function(accounts) {
@@ -271,7 +282,7 @@
                 var inputVar = document.getElementById("input-var").value
                 sampleDapp.simpleContract.set(inputVar, function(error, result){
                     if(!error) {
-                        M.toast({html: 'Set Variable Successfully!!', classes: 'green'});
+                        M.toast({html: 'Transaction Signed and Sent Successfully!!', classes: 'green'});
                         document.getElementById("input-var").value = "";
                         document.getElementById("latest-tx").innerText = result + " (Pending)";
                         web3.eth.getTransaction(result, function(error, txResult){

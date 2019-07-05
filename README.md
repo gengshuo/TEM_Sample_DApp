@@ -19,6 +19,8 @@ $> npm start
 ```
 開啟Chrome輸入網址：http://localhost:8000
 
+如果Windows無法連上請嘗試改用: http://localhost:8000/index.html
+
 ---
 
 ### 範例Web DApp想要展示的功能
@@ -39,4 +41,10 @@ $> npm start
 - 請嘗試讓網頁只接受指定的Test Network才能運作。（想想為什麼需要這麼做？）
 - 如何讓每個在這個網頁上的人可以即時看見合約中的字串被變更？
 
-### UI Framework ref: https://materializecss.com/ 
+---
+### 參考資料
+
+
+---
+### 其他參考資源
+- UI Framework Ref.: https://materializecss.com/ 
