@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "http-server ./src"
+    "start": "http-server ./src -p 8000"
   },
   "dependencies": {
     "http-server": "^0.11.1"

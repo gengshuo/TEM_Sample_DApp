@@ -15,13 +15,43 @@
 <body>
 
     <div class="container">
-        <h1>Hi!</h1>
-        <blockquote>
-            This is a simple web dapp.
-            First, we want to connect your MeataMask.
+        <h1>Hello DApp!</h1>
+        <blockquote id="info-block">
+            <p>This is a simple web dapp.</p>
+            <p id="network-info">You are now at Ethereum Network: <b id="network_name">Checking...</b></p>
+            <p>Here is the Contract Information: </p>
+            <p>Contract Address at: <b class="blue-text text-darken-4" id="contract-at">Loading...</b></p>
+            <p>
+                String Variable of the Contract : <b class="blue-text" id="contract-data">Loading...</b>
+                <a class="waves-effect waves-light btn" loading-text="Reloading..." 
+                    id="btn-var-get">Reload</a>
+            </p>
+            <p id="error-info" class="red-text text-darken-3" style="display: none;"></p>
         </blockquote>
-        <a class="waves-effect waves-light btn" loading-text="Connecting..." 
-            id="btn-connect-metamask">Connect MetaMask</a>
+
+        <blockquote id="setting-block">
+            
+            <section id="sec-interact" style="display: none;">
+                <p id="account-info">Current Account: <b id="account-addr"></b></p>
+                <p id="account-info">Account Balance: <b id="account-balance">Loading...</b></p>
+                <p id="tx-info">Latest Tx: <b id="latest-tx">N/A</b></p>
+                <p>
+                    <input type="text" id="input-var" placeholder="Please enter something you'd like to set..." />
+                    <a class="waves-effect waves-light btn" loading-text="Waiting for Signing..." 
+                        id="btn-set-contract-var">Set</a>
+                </p>
+            </section>
+
+            <section id="sec-connect">
+                <p>You can set a value to the String Variable of the Contract.</p>
+                <p>First, click `Connect MeataMask` to get your account information.</p>
+                <a class="waves-effect waves-light btn" loading-text="Connecting..." 
+                    id="btn-connect-metamask">Connect MetaMask</a>
+            </section>
+            
+        </blockquote>
+        
+        
     </div>
 
     <!--JavaScript at end of body for optimized loading-->
@@ -29,16 +59,101 @@
     <!--<script type="text/javascript" src="js/web3.min.js"></script>-->
     <script>
         sampleDapp = {
-            init: function(){
+            networkName: "unknown",
+            networkId: 0,
+            simpleContractAddrs: { // NetworkID => ContractAddress
+                "3": "0xc73e8c4da42587d38d00259dc7e5195df6604c61",
+                "5777": "0x765df6fded9ba6ba377fb6332e7a61337acea41e"
+            },
+            simpleContractABI: [
+                {
+                    "constant": false,
+                    "inputs": [
+                        {
+                            "name": "x",
+                            "type": "string"
+                        }
+                    ],
+                    "name": "set",
+                    "outputs": [],
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                },
+                {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "get",
+                    "outputs": [
+                        {
+                            "name": "",
+                            "type": "string"
+                        }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                }
+            ],
+            simpleContract: null,
+            init: function() {
                 document.getElementById("btn-connect-metamask")
-                    .addEventListener("click", this.handleConnectMeataMask_Click);
+                    .addEventListener("click", this.handleConnectMeataMask_Click); 
+                document.getElementById("btn-set-contract-var")
+                    .addEventListener("click", this.handleSetContractVar_Click);
+                document.getElementById("btn-var-get")
+                    .addEventListener("click", function(e){
+                        sampleDapp.openButtonLoading(e.target);
+                        sampleDapp.getContractVar(function(){
+                            sampleDapp.closeButtonLoading(e.target)
+                        });
+                    });
+                    
+                if(window.ethereum) {
+                    
+                
+                    // Handle Network Info Displaying
+                    console.log(web3.version.network);
+                    web3.version.getNetwork(function(error, result){
+                        sampleDapp.networkId = result;
+                        sampleDapp.showNetworkName();
 
-                console.log(web3.version);  
-                web3.version.getNode(function(error, result){ console.log("getNode", result) })
-                web3.version.getNetwork(function(error, result){ console.log("getNetwork", result) })
-                web3.version.getEthereum(function(error, result){ console.log("getEthereum", result) })
-                web3.version.getWhisper(function(error, result){ console.log("getWhisper", result) })
-                console.log(window.ethereum);    
+                        if(sampleDapp.simpleContractAddrs[sampleDapp.networkId.toString()]){
+
+                            // Handle Account Changing
+                            window.ethereum.on('accountsChanged', function (accounts) {
+                                sampleDapp.accountChanged();
+                            });
+
+                            // Experimental
+                            /*if(ethereum._metamask.isEnabled) {
+                                document.getElementById("btn-connect-metamask").style.display = "none";
+                                this.connectedMetamask();
+                            }*/
+
+                            // Setting Contract by ABI and Address 
+                            sampleDapp.setContract();
+
+                            // Getting Variable Current Value
+                            sampleDapp.getContractVar();
+
+                            // Real-time Solution1: Polling...
+                            /*function polling(){
+                                setTimeout(function(){
+                                    sampleDapp.getContractVar(function(){
+                                        polling();
+                                    });
+                                    console.log("Heart beat!!");
+                                }, 1000);
+                            }
+
+                            polling();*/
+                        } else {
+                            sampleDapp.handleUnsurpportedNetWork();
+                        }
+                    })
+
+                }
             },
             openButtonLoading: function(elm) {
                 elm.classList.add("disabled");
@@ -50,12 +165,131 @@
                 elm.setAttribute("loading-text", elm.innerText);
                 elm.innerText = elm.getAttribute("origin-text");
             },
+            connectedMetamask: function() {
+                document.getElementById("sec-connect").style.display = "none";
+                document.getElementById("sec-interact").style.display = "block";
+
+                this.accountChanged();
+                
+            },
+            accountChanged: function() {
+                document.getElementById("account-addr").innerText = web3.eth.accounts[0];
+                web3.eth.getBalance(web3.eth.accounts[0],function(error, result){
+                    if(!error) {
+                        document.getElementById("account-balance").innerText = result / 10**18 + " ETH";
+                        //document.getElementById("contract-data").innerText = JSON.stringify(result);
+                        //polling();
+                    } else
+                        console.error(error);
+                });
+            },
+            showErr: function(msg) {
+                document.getElementById("error-info").innerText = msg;
+                document.getElementById("error-info").style.display = "block";
+            },
+            showNetworkName: function() {
+                /* See EIP-155: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
+                1	Ethereum mainnet
+                2	Morden (disused), Expanse mainnet
+                3	Ropsten
+                4	Rinkeby
+                5	Goerli
+                42	Kovan
+                */ 
+                if(this.networkId) {
+                    switch(this.networkId.toString()) {
+                        case "1":
+                            this.networkName = "Ethereum mainnet";
+                            break;
+                        case "2":
+                            this.networkName = "Expanse mainnet";
+                            break;
+                        case "3":
+                            this.networkName = "Ropsten";
+                            break;
+                        case "4":
+                            this.networkName = "Rinkeby";
+                            break;
+                        case "5":
+                            this.networkName = "Goerli";
+                            break;
+                        case "42":
+                            this.networkName = "Kovan";
+                            break;
+                        case "5777":
+                            this.networkName = "Ganache(Local Dev)";
+                            break;
+                    }
+                    document.getElementById("network-info").style.display = "block";
+                    document.getElementById("network_name").innerText = this.networkName;
+                }
+                else 
+                {
+                    document.getElementById("network-info").style.display = "none";
+                }
+            },
+            getContractVar: function(callback) {
+                sampleDapp.simpleContract.get(function(error, result){
+                    if(!error) {
+                        document.getElementById("contract-data").innerText = JSON.stringify(result);
+                        if(typeof callback === "function") callback();
+                    } else
+                        console.error(error);
+                });
+            },
+            setContract: function() {
+                switch(this.networkId.toString()) {
+                    case "3":
+                    case "5777":
+                        this.simpleContract = web3.eth.contract(this.simpleContractABI).at(this.simpleContractAddrs[this.networkId.toString()]);
+                        document.getElementById("contract-at").innerText = this.simpleContractAddrs[this.networkId.toString()];
+                        break;
+                    default: 
+                        this.simpleContract = null;
+                        break;
+
+                }
+            },
+            handleUnsurpportedNetWork: function(){
+                document.getElementById("setting-block").style.display = "none";
+                this.showErr("We haven't supported this Ethereum Network.");
+            },
             handleConnectMeataMask_Click: function(e) {
                 sampleDapp.openButtonLoading(e.target);
-                setTimeout(function(){
+                window.ethereum.enable().then(function(accounts) {
+
+                    sampleDapp.connectedMetamask();
                     sampleDapp.closeButtonLoading(e.target);
-                }, 2000)
+                    
+                }).catch(function(error) {
+                    console.log(error);
+                    sampleDapp.showErr("You Rejected Metamask access")
+                });
+                
             },
+            handleSetContractVar_Click: function(e) {
+                var inputVar = document.getElementById("input-var").value
+                sampleDapp.simpleContract.set(inputVar, function(error, result){
+                    if(!error) {
+                        M.toast({html: 'Set Variable Successfully!!', classes: 'green'});
+                        document.getElementById("input-var").value = "";
+                        document.getElementById("latest-tx").innerText = result + " (Pending)";
+                        web3.eth.getTransaction(result, function(error, txResult){
+                            if(!error)
+                                console.log("txResult", JSON.stringify(txResult));
+                            else
+                                console.error(error);
+                        });
+                        web3.eth.getTransactionReceipt(result, function(error, txReceiptResult){
+                            if(!error)
+                                console.log("txReceiptResult", JSON.stringify(txReceiptResult));
+                            else
+                                console.error(error);
+                        });
+                    } else
+                        console.error(error);
+                });
+            }
         }
 
         sampleDapp.init();
