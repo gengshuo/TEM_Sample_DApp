@@ -10,47 +10,52 @@
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Sample DApp - Taipei Ethereum Meetup - 區塊鏈基礎教育課程</title>
+    <title>基礎DApp實作範例 | Taipei Ethereum Meetup 區塊鏈基礎教育</title>
 </head>
 <body>
 
     <div class="container">
-        <h1>Hello DApp!</h1>
+        <h3>哈囉！ 以太坊DApp</h3>
+        <h4>基礎DApp實作範例 - 完成版</h4>
         <blockquote id="info-block">
-            <p>This is a simple web dapp.</p>
-            <p>Supported Ethereum Network: <b>(3) Ropsten</b></p>
-            <p id="network-info">You are now at Ethereum Network: <b id="network_name">Checking...</b></p>
-            <p>Here is the Contract Information: </p>
-            <p>Contract Address at: <b class="blue-text text-darken-4" id="contract-at">Loading...</b></p>
-            <p>
-                String Variable of the Contract : <b class="blue-text" id="contract-data">Loading...</b>
-                <a class="waves-effect waves-light btn-small" loading-text="Reloading..." 
-                    id="btn-var-reload">Reload</a>
+            <p>這是一個簡單的DApp，用來讓大家蹂躪！</p>
+            <p id="network-info">目前所在的以太坊網路: <b id="network_name">確認中...</b></p>
+            <p id="contract-addr">已部署合約地址: <b class="blue-text text-darken-4" id="contract-at">讀取中...</b></p>
+            <p id="contract-var-panel" class="z-depth-1 blue lighten-4" style="padding: 20px;">
+                <b class="blue-text text-darken-4" id="contract-data">讀取中...</b>
+                <a class="waves-effect waves-light btn-floating btn-small" style="margin-left: 10px;" loading-text="Ｘ" 
+                    id="btn-var-refresh"><i class="material-icons">refresh</i></a>
             </p>
-            <p id="error-info" class="red-text text-darken-3" style="display: none;"></p>
+            <p id="error-info" class="z-depth-1 red lighten-4 red-text" style="padding: 20px; display: none;"></p>
         </blockquote>
 
         <blockquote id="setting-block">
-            
-            <section id="sec-interact" style="display: none;">
-                <p id="account-info">Current Account: <b id="account-addr"></b></p>
-                <p id="account-info">Account Balance: <b id="account-balance">Loading...</b></p>
-                <p id="tx-info">Latest Tx: <b id="latest-tx">N/A</b></p>
-                <p>
-                    <input type="text" id="input-var" placeholder="Please enter something you'd like to set..." />
-                    <a class="waves-effect waves-light btn-small" loading-text="Waiting for Signing..." 
-                        id="btn-set-contract-var">Set</a>
-                </p>
-            </section>
 
             <section id="sec-connect">
-                <p>You can set a value to the String Variable of the Contract.</p>
-                <p>First, click `Connect MeataMask` to get your account information.</p>
-                <a class="waves-effect waves-light blue-grey darken-4 btn-small pulse" loading-text="Connecting..." 
+                <p>你可以設定這個合約中儲存的字串變數值</p>
+                <p>但是首先，你需要`連結 MetaMask`。</p>
+                <a class="waves-effect waves-light brown darken-4 btn-small pulse" loading-text="連結中..." 
                     id="btn-connect-metamask">
                     <img src="images/metamask.svg" style="width: 20px; position: relative; top: 5px;" /> 
-                    Connect MetaMask
+                    連結 MetaMask
                 </a>
+
+            </section>
+
+
+            <section id="sec-interact" style="display: none;">
+                <p id="account-info">MetaMask目前使用帳號(錢包地址): <b id="account-addr"></b></p>
+                <p id="account-info">帳戶(錢包)餘額: <b id="account-balance">讀取中...</b></p>
+                <p id="tx-info">您最後執行的交易ID: <b id="latest-tx">(尚無交易)</b></p>
+                <p>你已經可以透過下方功能，設定這個合約中儲存的字串變數值。</p>
+                <div>
+                    <div class="input-field" style="margin-top: 15px;">
+                        <input id="input-var" type="text" class="validate">
+                        <label for="input-var">＊請輸入您想替合約設定的字串變數值</label>
+                    </div>
+                    <a class="waves-effect waves-light red darken-4 btn-small pulse" loading-text="等待使用者於MetaMask上簽章..." 
+                        id="btn-set-contract-var">設定字串變數值</a>
+                </div>
             </section>
             
         </blockquote>
@@ -62,13 +67,24 @@
     <script type="text/javascript" src="js/materialize.min.js"></script>
     <!--<script type="text/javascript" src="js/web3.min.js"></script>-->
     <script>
+        // 透過Javascript物件的方式去包裝整個應用
+        // ======================= 應用包裝物件開始 =======================
         sampleDapp = {
-            networkName: "unknown",
-            networkId: 0,
-            simpleContractAddrs: { // NetworkID => ContractAddress
+            // ======================= 變數區開始 =======================
+
+            // 以太坊網路代號 (程式取得後會自行更動)
+            networkId: "",
+
+            // 以太坊網路名稱 (程式取得後會自行更動)
+            networkName: "",
+
+            // 網路代號對應我們在該網路上已經部署的合約地址 (部署完後手動更改)
+            simpleContractAddrs: { 
                 "3": "0xc73e8c4da42587d38d00259dc7e5195df6604c61",
                 "5777": "0x3e3e830dc1c2eb41bfd2e660116b3a1d07aca4a3"
             },
+            
+            // 合約 ABI (部署完後手動更改)
             simpleContractABI: [
                 {
                     "constant": false,
@@ -99,13 +115,21 @@
                     "type": "function"
                 }
             ],
+
+            // 智能合約物件 (程式取得後會自行更動)
             simpleContract: null,
+
+            // ======================= 變數區結束 =======================
+// ------------------------------------------------------------------------------------
+            // ======================= 函式區開始 =======================
+            
+            // 初始化應用函式
             init: function() {
                 document.getElementById("btn-connect-metamask")
                     .addEventListener("click", this.handleConnectMeataMask_Click); 
                 document.getElementById("btn-set-contract-var")
                     .addEventListener("click", this.handleSetContractVar_Click);
-                document.getElementById("btn-var-reload")
+                document.getElementById("btn-var-refresh")
                     .addEventListener("click", function(e){
                         sampleDapp.openButtonLoading(e.target);
                         sampleDapp.getContractVar(function(){
@@ -124,34 +148,30 @@
 
                         if(sampleDapp.simpleContractAddrs[sampleDapp.networkId.toString()]){
 
-                            // Handle Account Changing
+                            // 監聽MetaMask帳號變更事件
                             window.ethereum.on('accountsChanged', function (accounts) {
                                 sampleDapp.accountChanged();
                             });
 
-                            // Experimental
-                            /*if(ethereum._metamask.isEnabled) {
-                                document.getElementById("btn-connect-metamask").style.display = "none";
-                                this.connectedMetamask();
-                            }*/
+                            // 透過合約ABI與已部署好的合約地址建立合約 
+                            sampleDapp.initContract();
 
-                            // Setting Contract by ABI and Address 
-                            sampleDapp.setContract();
-
-                            // Getting Variable Current Value
+                            // 取得合約內的字串變數值
                             sampleDapp.getContractVar();
 
-                            // Real-time Solution1: Polling...
-                            /*function polling(){
+                            // 即時顯示 解決方案1: Polling...
+                            /* 
+                            function polling(){
                                 setTimeout(function(){
                                     sampleDapp.getContractVar(function(){
                                         polling();
                                     });
-                                    console.log("Heart beat!!");
+                                    // console.log("Heart beat!!");
                                 }, 1000);
                             }
 
-                            polling();*/
+                            polling();
+                            */
                         } else {
                             sampleDapp.handleUnsurpportedNetWork();
                         }
@@ -159,16 +179,22 @@
 
                 }
             },
+
+            // 打開按鈕讀取狀態
             openButtonLoading: function(elm) {
                 elm.classList.add("disabled");
                 elm.setAttribute("origin-text", elm.innerText);
                 elm.innerText = elm.getAttribute("loading-text");
             },
+
+            // 關閉按鈕讀取狀態
             closeButtonLoading: function(elm) {
                 elm.classList.remove("disabled");
                 elm.setAttribute("loading-text", elm.innerText);
                 elm.innerText = elm.getAttribute("origin-text");
             },
+
+            // MetaMask 已連結後的處理
             connectedMetamask: function() {
                 document.getElementById("sec-connect").style.display = "none";
                 document.getElementById("sec-interact").style.display = "block";
@@ -176,21 +202,25 @@
                 this.accountChanged();
                 
             },
+
+            // 帳號變更處理
             accountChanged: function() {
                 document.getElementById("account-addr").innerText = web3.eth.accounts[0];
                 web3.eth.getBalance(web3.eth.accounts[0],function(error, result){
                     if(!error) {
                         document.getElementById("account-balance").innerText = result / 10**18 + " ETH";
-                        //document.getElementById("contract-data").innerText = JSON.stringify(result);
-                        //polling();
                     } else
                         console.error(error);
                 });
             },
+
+            // 顯示錯誤訊息
             showErr: function(msg) {
                 document.getElementById("error-info").innerText = msg;
                 document.getElementById("error-info").style.display = "block";
             },
+
+            // 顯示以太坊網路名稱
             showNetworkName: function() {
                 /* See EIP-155: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
                 1	Ethereum mainnet
@@ -220,7 +250,8 @@
                         case "42":
                             this.networkName = "Kovan";
                             break;
-                        case "5777":
+                        case "5777": 
+                            // 這是我們自己本機模擬節點(Ganache)定義的網路代號
                             this.networkName = "Ganache(Local Dev)";
                             break;
                     }
@@ -232,6 +263,8 @@
                     document.getElementById("network-info").style.display = "none";
                 }
             },
+
+            // 取得智能合約中的字串變數值
             getContractVar: function(callback) {
                 sampleDapp.simpleContract.get(function(error, result){
                     if(!error) {
@@ -239,12 +272,14 @@
                         if(typeof callback === "function") callback();
                     } else {
                         sampleDapp.handleContractLoadingErr();
-                        console.error(error);
+                        console.error(error.name);
                     }
                         
                 });
             },
-            setContract: function() {
+
+            // 初始化智能合約物件
+            initContract: function() {
                 switch(this.networkId.toString()) {
                     case "3":
                     case "5777":
@@ -257,14 +292,16 @@
 
                 }
             },
+
+            // 處理切換至不支援的以太坊網路時該進行的動作
             handleUnsurpportedNetWork: function(){
+                document.getElementById("contract-addr").style.display = "none";
+                document.getElementById("contract-var-panel").style.display = "none";
                 document.getElementById("setting-block").style.display = "none";
-                this.showErr("We haven't supported this Ethereum Network.");
+                this.showErr("抱歉，目前暫時不支援此以太坊網路，目前僅支援 - (3) Ropsten測試網路.");
             },
-            handleContractLoadingErr: function(){
-                sampleDapp.showErr("Contract address seems wrong!! Can't not found the current contract.")
-                document.getElementById("setting-block").style.display = "none";
-            },
+
+            // 處理使用者按下`連結MetaMask`按鈕時的動作
             handleConnectMeataMask_Click: function(e) {
                 sampleDapp.openButtonLoading(e.target);
                 window.ethereum.enable().then(function(accounts) {
@@ -274,17 +311,19 @@
                     
                 }).catch(function(error) {
                     console.log(error);
-                    sampleDapp.showErr("You Rejected Metamask access")
+                    sampleDapp.showErr("無法存取，有可能是你拒絕了此應用存取你的MetaMask!")
                 });
                 
             },
+
+            // 處理使用者按下`設定變數值`按鈕時的動作
             handleSetContractVar_Click: function(e) {
                 var inputVar = document.getElementById("input-var").value
                 sampleDapp.simpleContract.set(inputVar, function(error, result){
                     if(!error) {
-                        M.toast({html: 'Transaction Signed and Sent Successfully!!', classes: 'green'});
+                        M.toast({html: '交易發送成功', classes: 'green'});
                         document.getElementById("input-var").value = "";
-                        document.getElementById("latest-tx").innerText = result + " (Pending)";
+                        document.getElementById("latest-tx").innerText = result + "";
                         web3.eth.getTransaction(result, function(error, txResult){
                             if(!error)
                                 console.log("txResult", JSON.stringify(txResult));
@@ -300,9 +339,20 @@
                     } else
                         console.error(error);
                 });
+            },
+            
+            handleContractLoadingErr: function(){
+                document.getElementById("contract-var-panel").style.display = "none";
+                document.getElementById("setting-block").style.display = "none";
+                this.showErr("無法透過指定的ABI存取智能合約！（是否遺漏了部署動作 或 使用了錯誤的ABI？）");
             }
+            // ======================= 函式區結束 =======================
+        
         }
+        // ======================= 應用包裝物件結束 =======================
 
+
+        // 透過init()初始化整個應用
         sampleDapp.init();
         
     </script>
