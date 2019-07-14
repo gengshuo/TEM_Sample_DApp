@@ -85,7 +85,7 @@
                 "5777": "0x3e3e830dc1c2eb41bfd2e660116b3a1d07aca4a3"
             },
             
-            // 合約 ABI (部署完後手動更改)
+            // 合約 ABI (合約編譯完後手動更改)
             simpleContractABI: [
                 {
                     "constant": false,
@@ -117,7 +117,7 @@
                 }
             ],
 
-            // 智能合約物件 (程式取得後會自行更動)
+            // 智能合約物件 (程式取得創建好的合約物件後放入)
             simpleContract: null,
 
             // ======================= 變數區結束 =======================
@@ -137,7 +137,10 @@
                             sampleDapp.closeButtonLoading(e.target)
                         });
                     });
-                    
+                
+                // 最簡單的判斷使用者是不是有安裝 Metamask
+                // 但不一定有window.ethereum就表示他是裝Metamask 
+                // 這點必須要注意    
                 if(window.ethereum) {
                     
                 
@@ -147,6 +150,7 @@
                         sampleDapp.networkId = result;
                         sampleDapp.showNetworkName();
 
+                        // 確保使用者選擇的網路會在我們有部署合約的網路中
                         if(sampleDapp.simpleContractAddrs[sampleDapp.networkId.toString()]){
 
                             // 監聽MetaMask帳號變更事件
@@ -174,6 +178,8 @@
                             polling();
                             */
                         } else {
+
+                            // 處理使用者所在網路不支援時
                             sampleDapp.handleUnsurpportedNetWork();
                         }
                     })
@@ -284,7 +290,8 @@
                 switch(this.networkId.toString()) {
                     case "3":
                     case "5777":
-                        this.simpleContract = web3.eth.contract(this.simpleContractABI).at(this.simpleContractAddrs[this.networkId.toString()]);
+                        this.simpleContract = web3.eth.contract(this.simpleContractABI)
+                            .at(this.simpleContractAddrs[this.networkId.toString()]);
                         document.getElementById("contract-at").innerText = this.simpleContractAddrs[this.networkId.toString()];
                         break;
                     default: 
@@ -320,26 +327,28 @@
             // 處理使用者按下`設定變數值`按鈕時的動作
             handleSetContractVar_Click: function(e) {
                 var inputVar = document.getElementById("input-var").value
+
+                // 調用合約的Set函數，需要一個字串參數
                 sampleDapp.simpleContract.set(inputVar, function(error, result){
                     if(!error) {
+
+                        // 交易成功後處理
                         M.toast({html: '交易發送成功', classes: 'green'});
                         document.getElementById("input-var").value = "";
                         document.getElementById("latest-tx").innerText = result + "";
+
+                        // 取得交易資訊
                         web3.eth.getTransaction(result, function(error, txResult){
                             if(!error)
                                 console.log("txResult", JSON.stringify(txResult));
                             else
                                 console.error(error);
                         });
-                        web3.eth.getTransactionReceipt(result, function(error, txReceiptResult){
-                            if(!error)
-                                console.log("txReceiptResult", JSON.stringify(txReceiptResult));
-                            else
-                                console.error(error);
-                        });
+
                     } else
                         console.error(error);
                 });
+
             },
             
             handleContractLoadingErr: function(){
